@@ -25,27 +25,6 @@ use Symfony\Component\HttpFoundation\Request;
 class MoneyTransferControllerTest extends PhpUnitBase
 {
     /**
-     * @group unit
-     */
-    public function testGetCurrencies(): void
-    {
-        /** @var CurrencyRepository $currencyRepository */
-        $currencyRepository = $this->em->getRepository(Currency::class);
-        /** @var array $currencies */
-        $currencies = $currencyRepository->getCurrencies();
-
-        //remove id from the records as id can be changed at some point
-        $currencies = array_map(function ($currency): string {
-            return $currency['currency'];
-        }, $currencies);
-
-        $expected = ['GBP - British pound', 'BDT - Bangladeshi taka'];
-        sort($expected);
-        sort($currencies);
-        $this->assertEquals($expected, $currencies, 'Can not return expected currencies');
-    }
-
-    /**
      * @group api
      */
     public function testGetExchangeRate(): void
