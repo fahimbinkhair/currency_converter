@@ -2,8 +2,9 @@
 This is a small project developped using symfony 4.2 and JQuery to calculate destination amount providing source currency, desctination currency and source amount
 
 # How to install (On Linux)
-1) Composer install will install the packages
-2) Create the virtual host config file (/etc/apache2/sites-available/sendmoney.zit.conf)
+1) cd into project /project_dir/
+2) Composer install will install the packages
+3) Create the virtual host config file (/etc/apache2/sites-available/sendmoney.zit.conf to run on the browser)
 <code>
     <VirtualHost *:80>
         ServerName admin@sendmoney.zit
@@ -40,6 +41,6 @@ This is a small project developped using symfony 4.2 and JQuery to calculate des
         CustomLog /var/log/apache2/sendmoney_access.log combined
     </VirtualHost>
 </code>
-3) cd into project /project_dir/
+
 4) run bin/console doctrine:migrations:migrate
-5) run bin/phpunit to run test
+6) run bin/phpunit to run test
