@@ -13,8 +13,8 @@ namespace App\Controller;
 
 use App\Entity\Currency;
 use App\Repository\CurrencyRepository;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Service\Model\ExchangeRateModel;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -23,43 +23,50 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @package App\Controller
  */
-class MoneyTransferController extends AbstractController
+class MoneyTransferController extends BaseController
 {
-    /** @var EntityManagerInterface $em */
-    private $em;
-
     /**
-     * MoneyTransferController constructor.
-     * @param EntityManagerInterface $entityManager
+     * @Route("/", name="home")
      */
-    public function __construct(EntityManagerInterface $entityManager)
+    public function home(): Response
     {
-        $this->em = $entityManager;
+        /** @var CurrencyRepository $currencyRepository */
+        $currencyRepository = $this->em->getRepository(Currency::class);
+        /** @var array $currencies */
+        $currencies = $currencyRepository->getCurrencies();
+        /** @var string $route */
+        $route = $this->get('router')->generate('getExchangeRate', array(), false);
+
+        return $this->render('MoneyTransfer/home.html.twig', ['currencies' => $currencies, 'route' => $route]);
     }
 
     /**
-     * @Route("/transfer/supported-currencies", name="getCurrencies")
+     * @Route("/transfer/exchange-rate", name="getExchangeRate", methods={"get"})
+     * @param Request $request
+     * @param ExchangeRateModel $exchangeRateModel
+     * @return Response
+     * @throws \Exception
      */
-    public function getCurrencies(): Response
+    public function getExchangeRate(Request $request, ExchangeRateModel $exchangeRateModel): Response
     {
         try {
-            /** @var CurrencyRepository $currencyRepository */
-            $currencyRepository = $this->em->getRepository(Currency::class);
-            /** @var array $currencies */
-            $currencies = $currencyRepository->getCurrencies();
+            /** @var int $fromCurrency */
+            $fromCurrency = (int)$request->get('fromCurrency', 0);
+            /** @var int $toCurrency */
+            $toCurrency = (int)$request->get('toCurrency', 0);
+            /** @var float $sourceAmount */
+            $sourceAmount = (float)$request->get('sourceAmount', '0.00');
+            /** @var float $destinationAmount */
+            $destinationAmount = $exchangeRateModel
+                ->setRate($fromCurrency, $toCurrency)
+                ->getDestinationAmount($sourceAmount);
 
-            return $this->json($currencies);
+            return $this->json([
+                'destinationAmount' => $destinationAmount,
+                'exchangeRate' => $exchangeRateModel->getRate()
+            ]);
         } catch (\Throwable $throwable) {
-            syslog(LOG_ERR, "{$throwable->getFile()} ({$throwable->getLine()}): {$throwable->getMessage()}");
-            throw $this->createNotFoundException('Can not get currency');
+            throw $this->createNotFoundException('Can not calculate destination amount');
         }
-    }
-
-    /**
-     * @Route("/transfer/exchange-rate", name="getExchangeRate")
-     */
-    public function getExchangeRate(): Response
-    {
-        return $this->json([]);
     }
 }

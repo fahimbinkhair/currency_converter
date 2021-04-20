@@ -1,0 +1,73 @@
+{% extends "./base.html.twig" %}
+{% block pageTitle %}Calculate Destination Amount{% endblock %}
+{% block javascripts %}
+    <script>
+        $(document).ready(function () {
+            $('#btnCalculate').click(function () {
+                let data = {
+                    fromCurrency: $('#fromCurrency').val(),
+                    toCurrency: $('#toCurrency').val(),
+                    sourceAmount: $('#sourceAmount').val()
+                };
+
+                $.get("{{ route }}", data)
+                    .fail(function (XMLHttpRequest, textStatus, errorThrown) {
+                        $('#resultSuccess').hide();
+                        $('#resultError').show();
+                        $('#resultErrorMessage').html('Can not calculate destination amount');
+                    })
+                    .done(function (data) {
+                        $('#resultSuccess').show();
+                        $('#resultError').hide();
+                        $('#estimatedDestinationAmount').html(data.destinationAmount);
+                        $('#currentExchangeRate').html(data.exchangeRate);
+                    });
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-sm-4">
+            <p>
+                <label for="fromCurrency">Source Currency</label>
+                <select id="fromCurrency" class="form-control">
+                    {% for currency in currencies %}
+                        <option value="{{ currency.id }}">{{ currency.currency }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+        </div>
+        <div class="col-sm-4">
+            <p>
+                <label for="toCurrency">Destination Currency</label>
+                <select id="toCurrency" class="form-control">
+                    {% for currency in currencies %}
+                        <option value="{{ currency.id }}">{{ currency.currency }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+        </div>
+        <div class="col-sm-4">
+            <p>
+                <label for="sourceAmount">Source Amount</label>
+                <input type="number" id="sourceAmount" class="form-control">
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 text-center">
+            <div class="card text-center">
+                <div class="card-body" id="resultError" style="display: none">
+                    <div id="resultErrorMessage" class="alert alert-danger" role="alert"></div>
+                </div>
+                <div class="card-body" id="resultSuccess" style="display: none">
+                    <h5 class="card-title">Destination amount is: <span id="estimatedDestinationAmount"></span></h5>
+                    <p class="card-text">(Current exchange rate is: <span id="currentExchangeRate"></span>)</p>
+                </div>
+                <input type="button" id="btnCalculate" value="Calculate Destination Amount" class="btn btn-primary">
+            </div>
+        </div>
+    </div>
+{% endblock %}

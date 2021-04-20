@@ -11,8 +11,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Entity\Currency;
+use App\Repository\CurrencyRepository;
+use App\Tests\PhpUnitBase;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -20,27 +22,17 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * @package App\Tests\Controller
  */
-class MoneyTransferControllerTest extends WebTestCase
+class MoneyTransferControllerTest extends PhpUnitBase
 {
-    /** @var string */
-    private const BASE_URL = 'http://sendmoney.zit';
-
     /**
-     * @group api
+     * @group unit
      */
     public function testGetCurrencies(): void
     {
-        self::ensureKernelShutdown();
-
-        /** @var KernelBrowser $kernelBrowser */
-        $kernelBrowser = static::createClient();
-        /** @var string $api */
-        $api = $kernelBrowser->getContainer()->get('router')->generate('getCurrencies', array(), false);
-        $kernelBrowser->request(Request::METHOD_GET, self::BASE_URL . $api);
-        /** @var string $currenciesInJson */
-        $currenciesInJson = $kernelBrowser->getResponse()->getContent();
+        /** @var CurrencyRepository $currencyRepository */
+        $currencyRepository = $this->em->getRepository(Currency::class);
         /** @var array $currencies */
-        $currencies = json_decode($currenciesInJson, true);
+        $currencies = $currencyRepository->getCurrencies();
 
         //remove id from the records as id can be changed at some point
         $currencies = array_map(function ($currency): string {
@@ -62,10 +54,15 @@ class MoneyTransferControllerTest extends WebTestCase
 
         /** @var KernelBrowser $kernelBrowser */
         $kernelBrowser = static::createClient();
-        /** @var string $api */
-        $api = $kernelBrowser->getContainer()->get('router')->generate('getExchangeRate', array(), false);
-        $kernelBrowser->request(Request::METHOD_GET, self::BASE_URL . $api);
-        /** @var string $exchangeRateInJson */
-        $exchangeRateInJson = $kernelBrowser->getResponse()->getContent();
+        /** @var string $route */
+        $route = $kernelBrowser->getContainer()->get('router')->generate('getExchangeRate', array(), false);
+        $kernelBrowser->request(Request::METHOD_GET, self::BASE_URL . $route . '?fromCurrency=1&toCurrency=2&sourceAmount=100');
+        /** @var string $exchangeRate */
+        $exchangeRate = $kernelBrowser->getResponse()->getContent();
+        $this->assertEquals(
+            '{"destinationAmount":"11,500.00","exchangeRate":"115.00"}',
+            $exchangeRate,
+            'Got unexpected exchange rate and/or destination amount'
+        );
     }
 }
